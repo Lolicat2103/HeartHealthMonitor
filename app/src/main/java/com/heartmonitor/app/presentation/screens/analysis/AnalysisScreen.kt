@@ -40,7 +40,6 @@ import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
 import android.content.ContentValues
-import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import kotlinx.coroutines.Dispatchers
@@ -55,7 +54,6 @@ import java.io.BufferedInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 
 private fun playPcmFileFromPath(
     path: String,
@@ -119,7 +117,6 @@ private fun playPcmFileFromPath(
 }
 
 
-@RequiresApi(Build.VERSION_CODES.Q)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalysisScreen(
@@ -433,68 +430,11 @@ fun AnalysisScreen(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
 
-
-
-                                // -------- PLAY PCM (waveform replay) --------
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    IconButton(
-                                        onClick = {
-                                            val rec = uiState.recording ?: return@IconButton
-
-// Stop WAV first
-                                            if (isPlayingWav) {
-                                                try { wavPlayer?.stop() } catch (_: Exception) {}
-                                                try { wavPlayer?.release() } catch (_: Exception) {}
-                                                wavPlayer = null
-                                                isPlayingWav = false
-                                            }
-
-                                            if (!isPlayingPcm) {
-                                                val pcmPath = rec.pcmFilePath
-                                                val f = File(pcmPath)
-                                                Log.e("PCM_PLAY", "path=$pcmPath exists=${f.exists()} size=${f.length()} sampleRate=${rec.sampleRateHz}")
-
-                                                if (pcmPath.isNullOrBlank()) {
-                                                    Log.e("PCM_PLAY", "pcmFilePath is null/blank for rec=${rec.id}")
-                                                    return@IconButton
-                                                }
-
-                                                // stop/reset playhead
-                                                viewModel.setPlaybackMs(0L)
-                                                pcmStartUptime = SystemClock.uptimeMillis()
-
-                                                val (track, durMs) = playPcmFileFromPath(pcmPath, rec.audioSampleRate ?: 8000)
-
-                                                pcmTrack = track
-                                                pcmDurationMs = durMs
-                                                isPlayingPcm = (track != null && durMs > 0L)
-
-                                                if (!isPlayingPcm) viewModel.setPlaybackMs(0L)
-                                            } else {
-                                                try { pcmTrack?.stop() } catch (_: Exception) {}
-                                                try { pcmTrack?.release() } catch (_: Exception) {}
-                                                pcmTrack = null
-                                                isPlayingPcm = false
-                                                viewModel.setPlaybackMs(0L)
-                                            }
-
-                                        }
-                                    ) {
-                                        Icon(
-                                            imageVector = if (isPlayingPcm) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                            contentDescription = "Play PCM",
-                                            tint = OrangePrimary
-                                        )
-                                    }
-                                    Text("PCM", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-                                }
-
                                 // -------- PLAY WAV (MediaPlayer) --------
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     IconButton(
                                         onClick = {
                                             val rec = recording ?: return@IconButton
-                                            Log.e("BTN", "recording=${rec?.id} name=${rec.name} pcm=${rec?.pcmFilePath} wav=${rec?.wavFilePath}")
                                             val path = rec.wavFilePath
 
                                             // stop PCM if playing
@@ -553,11 +493,11 @@ fun AnalysisScreen(
                                     ) {
                                         Icon(
                                             imageVector = if (isPlayingWav) Icons.Default.Pause else Icons.Default.PlayCircleFilled,
-                                            contentDescription = "Play WAV",
+                                            contentDescription = "Play Audio",
                                             tint = OrangePrimary
                                         )
                                     }
-                                    Text("WAV", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                                    Text("Play", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
                                 }
 
                                 // -------- DOWNLOAD PCM --------
@@ -565,7 +505,6 @@ fun AnalysisScreen(
                                     IconButton(
                                         onClick = {
                                             val rec = recording ?: return@IconButton
-                                            Log.e("BTN", "recording=${rec?.id} name=${rec?.name} pcm=${rec?.pcmFilePath} wav=${rec?.wavFilePath}")
                                             val pcmPath = rec.pcmFilePath ?: return@IconButton
 
                                             val uri = exportToDownloads(
@@ -596,7 +535,6 @@ fun AnalysisScreen(
                                     IconButton(
                                         onClick = {
                                             val rec = recording ?: return@IconButton
-                                            Log.e("BTN", "recording=${rec?.id} name=${rec?.name} pcm=${rec?.pcmFilePath} wav=${rec?.wavFilePath}")
                                             val wavPath = rec.wavFilePath ?: return@IconButton
 
                                             val uri = exportToDownloads(
@@ -840,7 +778,6 @@ private fun playWaveformPcmFromSignal(
     return track
 }
 
-@RequiresApi(Build.VERSION_CODES.Q)
 private fun exportToDownloads(
     context: android.content.Context,
     srcPath: String,
